@@ -1,6 +1,4 @@
-import numpy as np
-
-from mantis import math
+from mantis import utils
 
 
 class MantisKeychain:
@@ -11,14 +9,9 @@ class MantisKeychain:
         half_key_size = (key_size // 2)
 
         k0 = key >> half_key_size
-        k0p = math.rotate_right(k0, 1, half_key_size) ^ (k0 >> 63)
-        k1 = (key & (math.get_mask(half_key_size)))
+        k0p = utils.rotate_right(k0, 1, half_key_size) ^ (k0 >> 63)
+        k1 = (key & (utils.get_mask(half_key_size)))
 
-        self.k0 = math.split_int(k0, nbits, half_key_size).reshape(nblocks, nblocks)
-        self.k1 = math.split_int(k1, nbits, half_key_size).reshape(nblocks, nblocks)
-        self.k0p = math.split_int(k0p, nbits, half_key_size).reshape(nblocks, nblocks)
-
-
-class MantisTweakChain:
-    def __init__(self, tweak: np.ndarray) -> None:
-        pass
+        self.k0 = utils.int2matrix(k0, nbits, half_key_size, nblocks)
+        self.k1 = utils.int2matrix(k1, nbits, half_key_size, nblocks)
+        self.k0p = utils.int2matrix(k0p, nbits, half_key_size, nblocks)
