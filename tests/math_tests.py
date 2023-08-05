@@ -52,12 +52,13 @@ class MathTests(unittest.TestCase):
         self.assertEqual(expected, math.get_mask(mask_size))
 
     @parameterized.expand([
-        [np.array([1, 1, 0, 1]), 0b1101, 1],
-        [np.array([0b10, 0b11, 0b00, 0b01]), 0b10110001, 2],
-        [np.array([0b10110, 0b11001]), 0b1011011001, 5],
+        [np.array([1, 1, 0, 1]), 0b1101, 1, 4],
+        [np.array([0b10, 0b11, 0b00, 0b01]), 0b10110001, 2, 8],
+        [np.array([0b10110, 0b11001]), 0b1011011001, 5, 10],
+        [np.array([0b000, 0b000, 0b000]), 0b000000000, 3, 9]
     ])
-    def test_split_int(self, expected: np.ndarray, number: int, mask_size: int):
-        self.assertTrue(np.all(expected == math.split_int(number, mask_size)))
+    def test_split_int(self, expected: np.ndarray, number: int, mask_size: int, number_length):
+        self.assertTrue(np.all(expected == math.split_int(number, mask_size, number_length)))
 
 
 if __name__ == '__main__':
