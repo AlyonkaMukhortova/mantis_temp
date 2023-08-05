@@ -62,3 +62,8 @@ ROUND_CONSTANTS = [
         [0x8, 0x9, 0x7, 0x9],
         [0xf, 0xb, 0x1, 0xb]]),
 ]
+
+
+H = np.array([6, 5, 14, 15, 0, 1, 2, 3, 7, 12, 13, 4, 8, 9, 10, 11])
+
+H_INVERSE = np.array([H.tolist().index(i) for i in range (16)])
