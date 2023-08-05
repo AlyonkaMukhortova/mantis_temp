@@ -48,8 +48,8 @@ def rotate_right(number: int, n: int, nbits: int) -> int:
     return number
 
 
-def str2int(binary_string: str) -> int:
-    return int(''.join(binary_string.split()), 2)
+def str2int(bitstring: str) -> int:
+    return int(''.join(bitstring.split()), 2)
 
 
 def get_mask(mask_size: int) -> int:
@@ -63,3 +63,12 @@ def split_int(number: int, mask_size: int, number_length: int) -> np.ndarray:
     nsplit = number_length // mask_size
     mask = get_mask(mask_size)
     return np.array([(number & (mask << (mask_size * i))) >> (i * mask_size) for i in range(nsplit)])[::-1]
+
+
+def split_bitstring(binary_string: str, mask_size: int, number_length: int) -> np.ndarray:
+    number = str2int(binary_string)
+    return split_int(number, mask_size, number_length)
+
+
+def bitstring2matrix(bitstring: str, mask_size: int, number_length: int, side: int) -> np.ndarray:
+    return split_bitstring(bitstring, mask_size, number_length).reshape((side, side))

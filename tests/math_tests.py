@@ -57,8 +57,25 @@ class MathTests(unittest.TestCase):
         [np.array([0b10110, 0b11001]), 0b1011011001, 5, 10],
         [np.array([0b000, 0b000, 0b000]), 0b000000000, 3, 9]
     ])
-    def test_split_int(self, expected: np.ndarray, number: int, mask_size: int, number_length):
+    def test_split_int(self, expected: np.ndarray, number: int, mask_size: int, number_length: int):
         self.assertTrue(np.all(expected == math.split_int(number, mask_size, number_length)))
+
+    @parameterized.expand([
+        [np.array([1, 1, 0, 1]), '1101', 1, 4],
+        [np.array([0b10, 0b11, 0b00, 0b01]), '10110001', 2, 8],
+        [np.array([0b10110, 0b11001]), '1011011001', 5, 10],
+        [np.array([0b000, 0b000, 0b000]), '000000000', 3, 9]
+    ])
+    def test_split_bitstring(self, expected: np.ndarray, bitstring: str, mask_size: int, number_length: int):
+        self.assertTrue(np.all(expected == math.split_bitstring(bitstring, mask_size, number_length)))
+
+    @parameterized.expand([
+        [np.array([[1, 1], [0, 1]]), '1101', 1, 4, 2],
+        [np.array([[0b10, 0b11], [0b00, 0b01]]), '10110001', 2, 8, 2],
+        [np.array([[0b000, 0b000], [0b000, 0b000]]), '000000000000', 3, 12, 2]
+    ])
+    def test_bitstring2matrix(self, expected: np.ndarray, bitstring: str, mask_size: int, number_length: int, side: int):
+         self.assertTrue(np.all(expected == math.bitstring2matrix(bitstring, mask_size, number_length, side)))
 
 
 if __name__ == '__main__':
