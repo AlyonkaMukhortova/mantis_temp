@@ -56,10 +56,10 @@ def get_mask(mask_size: int) -> int:
     return (1 << mask_size) - 1
 
 
-def split_int(number: int, mask_size: int) -> np.ndarray:
-    if number.bit_length() % mask_size != 0:
+def split_int(number: int, mask_size: int, number_length: int) -> np.ndarray:
+    if number_length % mask_size != 0:
         raise ValueError('Number length must be multiple of mask size.')
 
-    nsplit = number.bit_length() // mask_size
+    nsplit = number_length // mask_size
     mask = get_mask(mask_size)
     return np.array([(number & (mask << (mask_size * i))) >> (i * mask_size) for i in range(nsplit)])[::-1]

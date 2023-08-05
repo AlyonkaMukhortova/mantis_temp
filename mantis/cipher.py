@@ -6,6 +6,7 @@ from mantis import math
 from mantis.keys import MantisKeychain
 
 
+
 class Mantis:
     def __init__(self, nbits: int, nblocks: int, nrounds: int) -> None:
         self._gf = galois.GF(2 ** nbits)
@@ -16,13 +17,35 @@ class Mantis:
 
     def encrypt(self, message: str, key: str, tweak: str):
         self._state = self._gf(
-            math.split_int(math.str2int(message), self._nbits)
+            math.split_int(math.str2int(message), self._nbits, self._nbits * self._nblocks ** 2)
                 .reshape(self._nblocks, self._nblocks))
 
-        self._keys = MantisKeychain(math.str2int(key), self._key_size, self._nbits)
+        self._keys = MantisKeychain(math.str2int(key), self._key_size, self._nbits, self._nblocks)
 
-    def _round(self, secret: galois.typing.Array, round_constant: galois.typing.Array):
-        self._state = self._gf(math.substitute(self._state.ravel(), constants.S_BOX).reshape((4, 4)))
+        self._state ^= self._gf(self._keys.k0)
+        self._state ^= self._gf(self._keys.k1)
+        # xor tweak
+
+        for i in range(self._nrounds):
+            self._round(self._gf(self._keys.k1), self._gf(constants.ROUND_CONSTANTS[i]))
+
+        self._state = self._gf(math.substitute(self._state.ravel(), self._gf(constants.S_BOX)).reshape((4, 4)))
+        self._state = self._gf(constants.M.dot(self._state))
+        self._state = self._gf(math.substitute(self._state.ravel(), self._gf(constants.S_BOX)).reshape((4, 4)))
+        
+        for i in range(self._nrounds):
+            self._round_inverse(self._gf(self._keys.k1) ^ self._gf(constants.ALPHA), 
+                                self._gf(constants.ROUND_CONSTANTS)[self._nrounds - i - 1])
+
+        # xor tweak
+        self._state ^= self._gf(self._keys.k1)
+        self._state ^= self._gf(constants.ALPHA)
+        self._state ^= self._gf(self._keys.k0p)
+
+        return self._state
+
+    def _round(self, secret, round_constant):
+        self._state = self._gf(math.substitute(self._gf(self._state.ravel()), constants.S_BOX).reshape((4, 4)))
         self._state ^= round_constant
         self._state ^= secret
         self._state = self._gf(math.permute(self._state.ravel(), constants.P).reshape((4, 4)))
@@ -34,3 +57,5 @@ class Mantis:
         self._state ^= secret
         self._state ^= round_constant
         self._state = self._gf(math.substitute(self._state.ravel(), constants.S_BOX).reshape((4, 4)))
+
+    
