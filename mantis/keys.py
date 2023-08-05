@@ -12,7 +12,7 @@ class MantisKeychain:
 
         k0 = key >> half_key_size
         k0p = math.rotate_right(k0, 1, half_key_size) ^ (k0 >> 63)
-        k1 = key & (math.get_mask(half_key_size) << (half_key_size - 1))
+        k1 = (key & (math.get_mask(half_key_size)))
 
         self.k0 = math.split_int(k0, nbits, half_key_size).reshape(nblocks, nblocks)
         self.k1 = math.split_int(k1, nbits, half_key_size).reshape(nblocks, nblocks)
