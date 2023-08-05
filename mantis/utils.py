@@ -72,3 +72,7 @@ def split_bitstring(binary_string: str, mask_size: int, number_length: int) -> n
 
 def bitstring2matrix(bitstring: str, mask_size: int, number_length: int, side: int) -> np.ndarray:
     return split_bitstring(bitstring, mask_size, number_length).reshape((side, side))
+
+
+def int2matrix(number: int, mask_size: int, number_length: int, side: int) -> np.ndarray:
+    return split_int(number, mask_size, number_length).reshape((side, side))
