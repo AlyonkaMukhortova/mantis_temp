@@ -12,6 +12,13 @@ class Mantis:
         self._nblocks = nblocks
         self._nrounds = nrounds
         self._key_size = 2 * self._nbits * self._nblocks ** 2
+        self._M = constants.get_m(nblocks)
+        self._S = constants.get_s(nbits)
+        self._P = constants.get_p(nblocks)
+        self._P_INVERSE = constants.invert_permutation(self._P)
+        self._H = constants.get_h(nblocks)
+        self._H_INVERSE = constants.invert_permutation(self._H)
+        
 
     def encrypt(self, message: str, key: str, tweak: str):
         self._prepare(message, key, tweak)
@@ -36,17 +43,17 @@ class Mantis:
         self._state ^= self._gf(self._tweak)
 
         for i in range(self._nrounds):
-            self._tweak = utils.permute(self._tweak.ravel(), constants.H).reshape((4, 4))
+            self._tweak = utils.permute(self._tweak.ravel(), self._H).reshape((self._nblocks, self._nblocks))
             self._round(self._gf(self._keys.k1) ^ self._tweak, self._gf(constants.ROUND_CONSTANTS[i]))
 
-        self._state = self._gf(utils.substitute(self._state.ravel(), self._gf(constants.S_BOX)).reshape((4, 4)))
-        self._state = self._gf(constants.M).dot(self._state)
-        self._state = self._gf(utils.substitute(self._state.ravel(), self._gf(constants.S_BOX)).reshape((4, 4)))
+        self._state = self._gf(utils.substitute(self._state.ravel(), self._gf(self._S)).reshape((self._nblocks, self._nblocks)))
+        self._state = self._gf(self._M).dot(self._state)
+        self._state = self._gf(utils.substitute(self._state.ravel(), self._gf(self._S)).reshape((self._nblocks, self._nblocks)))
 
         for i in range(self._nrounds):
             self._round_inverse(self._gf(self._keys.k1) ^ self._gf(constants.ALPHA) ^ self._tweak,
                                 self._gf(constants.ROUND_CONSTANTS)[self._nrounds - i - 1])
-            self._tweak = utils.permute(self._tweak.ravel(), constants.H_INVERSE).reshape((4, 4))
+            self._tweak = utils.permute(self._tweak.ravel(), self._H_INVERSE).reshape((self._nblocks, self._nblocks))
 
         self._state ^= self._gf(self._tweak)
         self._state ^= self._gf(self._keys.k1)
@@ -54,18 +61,18 @@ class Mantis:
         self._state ^= self._gf(self._keys.k0p)
 
     def _round(self, tweakey, round_constant):
-        self._state = self._gf(utils.substitute(self._state.ravel(), constants.S_BOX).reshape((4, 4)))
+        self._state = self._gf(utils.substitute(self._state.ravel(), self._S).reshape((self._nblocks, self._nblocks)))
         self._state ^= round_constant
         self._state ^= tweakey
-        self._state = self._gf(utils.permute(self._state.ravel(), constants.P).reshape((4, 4)))
-        self._state = self._gf(constants.M).dot(self._state)
+        self._state = self._gf(utils.permute(self._state.ravel(), self._P).reshape((self._nblocks, self._nblocks)))
+        self._state = self._gf(self._M).dot(self._state)
 
     def _round_inverse(self, tweakey, round_constant):
-        self._state = self._gf(constants.M).dot(self._state)
-        self._state = self._gf(utils.permute(self._state.ravel(), constants.P_INVERSE).reshape((4, 4)))
+        self._state = self._gf(self._M).dot(self._state)
+        self._state = self._gf(utils.permute(self._state.ravel(), self._P_INVERSE).reshape((self._nblocks, self._nblocks)))
         self._state ^= tweakey
         self._state ^= round_constant
-        self._state = self._gf(utils.substitute(self._state.ravel(), constants.S_BOX).reshape((4, 4)))
+        self._state = self._gf(utils.substitute(self._state.ravel(), self._S).reshape((self._nblocks, self._nblocks)))
 
     def _prepare(self, plaintext: str, key: str, tweak: str):
         self._state = self._bitstring2matrix(plaintext)
@@ -76,4 +83,5 @@ class Mantis:
         return self._gf(utils.bitstring2matrix(bitstring, self._nbits, self._nbits * self._nblocks ** 2, self._nblocks))
 
     def _state2bitstring(self):
+        # to do: 0{nbits}b
         return ''.join([f'{i:04b}' for i in self._state.ravel()])

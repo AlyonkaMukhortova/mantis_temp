@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.linalg import circulant
+
 
 
 P = np.array([0, 11, 6, 13, 10, 1, 12, 7, 5, 14, 3, 8, 15, 4, 9, 2])
@@ -11,6 +13,46 @@ M = np.array([
     [1, 1, 0, 1],
     [1, 1, 1, 0],
 ])
+
+def get_m(n: int):
+    return circulant([0] + [1] * (n-1))
+
+
+def get_s(n: int, seed=None) -> np.ndarray: 
+    if n == 4:
+        return S_BOX
+    
+    upper_bound = 2 ** n
+    involution = np.full(upper_bound, -1)
+    rng = np.random.default_rng(seed)
+     
+    for i in range(upper_bound):
+        if involution[i] != -1:
+            continue
+
+        number = rng.integers(0, upper_bound)
+        while involution[number] != -1:
+            number = rng.integers(0, upper_bound)
+
+        involution[i], involution[number] = number, i
+ 
+    return involution
+
+
+
+def get_p(n: int, seed=None):
+    rng = np.random.default_rng(seed)
+
+    return P if n == 4 else rng.permutation(range(2 ** n))
+
+
+
+def get_h(n: int, seed=None):
+    rng = np.random.default_rng(seed)
+
+    return H if n == 4 else rng.permutation(range(2 ** n))
+
+
 
 ALPHA = np.array([
     [0x2, 0x4, 0x3, 0xf],
@@ -66,4 +108,7 @@ ROUND_CONSTANTS = [
 
 H = np.array([6, 5, 14, 15, 0, 1, 2, 3, 7, 12, 13, 4, 8, 9, 10, 11])
 
-H_INVERSE = np.array([H.tolist().index(i) for i in range (16)])
+
+
+def invert_permutation(permutation: np.ndarray) -> np.ndarray:
+    return np.array([permutation.tolist().index(i) for i in range (16)])
