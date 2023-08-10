@@ -7,11 +7,10 @@ import numpy as np
 
 class MantisDebug:
     actions = ['sbox', '+const', '+tweakey', 'permute', 'matrix']
-# self._state[row, col, state_index]
-# self._state[:, :, i]
 
     def __init__(self, nrounds: int, action: str, save_all_flag: bool, nblocks: int) -> None:
-        self._states = np.empty((nblocks, nblocks, 0), dtype=int)
+        self._nblocks = nblocks
+        self.reset()
         # self._final_action = self.actions.index(action)
         # self._final_round = nrounds
         self._save = save_all_flag
@@ -33,26 +32,25 @@ class MantisDebug:
             if round > self._nrounds + 1:
                 if round >= 2 * self._nrounds + 2:
                     state_index = 2 + (round - 2) * 5 + 3 + (0 if action == '+tweakey' else 1)
-                    print('last')
                 else:
                     state_index = 2 + (round - 2) * 5 + self.actions.index(action) + 3
-                    print("back rounds")
             else:
-                print('mid rounds')
                 state_index = 2 + (self._nrounds) * 5 + 2 * (round - self._nrounds) + (0 if action == 'sbox' else 1)
         elif round >= 0:
             state_index = 2 + round * 5 + self.actions.index(action)
         else:
-            print('first')
             state_index = 1 if action == '+tweakey' else 0
         return self._states[:, :, state_index]
         # return state_index
 
+    def reset(self):
+        self._states = np.empty((self._nblocks, self._nblocks, 0), dtype=int)
+
 class Mantis:
     def __init__(self, nbits: int, nblocks: int, nrounds: int, debug: MantisDebug=None) -> None:
-        self._debug = debug
+        self.debug = debug
         if debug:
-            self._debug.set_nrounds(nrounds)
+            self.debug.set_nrounds(nrounds)
 
         self._gf = galois.GF(2 ** nbits)
         self._nbits = nbits
@@ -151,5 +149,5 @@ class Mantis:
         return ''.join([f'{i:04b}' for i in self._state.ravel()])
     
     def _add_state(self):
-        if self._debug:
-            self._debug.add_state(self._state)
+        if self.debug:
+            self.debug.add_state(self._state)

@@ -1,6 +1,7 @@
 from mantis import utils
 from mantis import constants
 from mantis import cipher
+from mantis.utils import FixedBitsIterator
 
 def main():
     print('Run tests to make sure everything works!')
@@ -10,9 +11,15 @@ def main():
             '1011101010010001001011100110111100010000010101011111111011010010',\
             '0011000010001110100010100000011111110001011010001111010100010111',
 
-    mantis.encrypt(plaintext, key, tweak)
-    print(mantis._debug.get_state(-1, 'sbox'))
-    print(utils.bitstring2matrix(plaintext, 4, 64, 4) ^ mantis._keys.k0)
+
+    plaintexts = FixedBitsIterator(64, [i for i in range(4)], 0)
+    for plaintext in plaintexts:
+        mantis.debug.reset()
+        mantis.encrypt(f'{plaintext:064b}', key, tweak)
+        print(mantis.debug.get_state(-1, 'sbox'))
+        
+
+
 
 
 if __name__ == '__main__':
