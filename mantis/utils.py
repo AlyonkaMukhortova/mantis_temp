@@ -1,3 +1,5 @@
+import typing
+
 import numpy as np
 
 
@@ -76,3 +78,43 @@ def bitstring2matrix(bitstring: str, mask_size: int, number_length: int, side: i
 
 def int2matrix(number: int, mask_size: int, number_length: int, side: int) -> np.ndarray:
     return split_int(number, mask_size, number_length).reshape((side, side))
+
+
+class FixedBitsIterator:
+    """Iterate over certain bits in numbers of given size.
+
+    **Example**
+
+    >>> fbi = FixedBitsIterator(4, [0, 2], 0)
+    >>> [f'{text:04b}' for text in fbi]
+    ['1111', '1101', '0111', '0101']
+    """
+
+    def __init__(
+            self, text_size_bits: int,
+            iterator_bit_indices: typing.Union[list[int], None] = None,
+            fixed_bits_value: int = 0) -> None:
+
+        self._text_size_bits: int = text_size_bits
+        self._iterator_bit_indices: typing.Union[list[int], None] = iterator_bit_indices
+        self._fixed_bits_value: int = fixed_bits_value
+
+        self._range = 1 << len(self._iterator_bit_indices)
+        self._iterator_bit_indices.sort(reverse=True)
+
+    def __iter__(self):
+        self._counter = -1
+        return self
+
+    def __next__(self):
+        self._counter += 1
+
+        if self._counter == self._range:
+            raise StopIteration
+
+        text = get_mask(self._text_size_bits) if self._fixed_bits_value == 1 else 0
+        for i, bit_index in enumerate(self._iterator_bit_indices):
+            counter_bit = (self._counter >> i) & 1
+            text ^= counter_bit << (self._text_size_bits - bit_index - 1)
+
+        return text
