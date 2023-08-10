@@ -1,3 +1,4 @@
+import typing
 import unittest
 
 import numpy as np
@@ -46,10 +47,12 @@ class UtilsTests(unittest.TestCase):
     @parameterized.expand([
         [0b1, 1],
         [0b11111, 5],
-        [0b11111111, 8]
+        [0b_1111_1111, 8],
+        [0b_1001, 4, [0, 3]],
+        [0b_1100_0010, 8, [1, 6, 7]]
     ])
-    def test_get_mask(self, expected: int, mask_size: int):
-        self.assertEqual(expected, utils.get_mask(mask_size))
+    def test_get_mask(self, expected: int, mask_size: int, bit_indices: typing.Union[list[int], None] = None):
+        self.assertEqual(expected, utils.get_mask(mask_size, bit_indices))
 
     @parameterized.expand([
         [np.array([1, 1, 0, 1]), 0b1101, 1, 4],
