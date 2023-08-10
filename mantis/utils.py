@@ -54,8 +54,33 @@ def str2int(bitstring: str) -> int:
     return int(''.join(bitstring.split()), 2)
 
 
-def get_mask(mask_size: int) -> int:
-    return (1 << mask_size) - 1
+def get_mask(mask_size: int, bit_indices: typing.Union[list[int], None] = None) -> int:
+    """Creates a mask with either all or given bits set.
+
+    **Examples**
+
+    >>> get_mask(4)
+    15  # 0b1111
+
+    >>> get_mask(4, [0, 3])
+    9  # 0b1001
+
+    :param mask_size: mask size.
+    :param bit_indices: indices of bits set to 1. Other bits will be set to 0. Indexing starts from 0.
+    :return: generated mask.
+    """
+
+    if not bit_indices:
+        return (1 << mask_size) - 1
+
+    if any([bit_index >= mask_size for bit_index in bit_indices]):
+        raise ValueError(f'Bit index overflow. Mask size: {mask_size}, bit indices: {bit_indices}.')
+
+    result = 0
+    for bit_index in bit_indices:
+        result |= 1 << bit_index
+
+    return result
 
 
 def split_int(number: int, mask_size: int, number_length: int) -> np.ndarray:
