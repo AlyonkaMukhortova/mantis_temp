@@ -1,25 +1,71 @@
-from mantis import utils
-from mantis import constants
-from mantis import cipher
-from mantis.utils import FixedBitsIterator
+import numpy as np
+
+from mantis.constants import P, M, P_INVERSE
+from mantis.utils import permute, int2matrix
+
+
+def forward_pass(state):
+    result = state + state
+    result = permute(result.ravel(), P).reshape((4, 4))
+    result = M.dot(result)
+    result = result + state
+    result = permute(result.ravel(), P).reshape((4, 4))
+    result = M.dot(result)
+
+    return result
+
+
+def backward_pass(state):
+    result = M.dot(state)
+    result = permute(result.ravel(), P_INVERSE).reshape((4, 4))
+    result = result + state
+    result = M.dot(result)
+    result = permute(result.ravel(), P_INVERSE).reshape((4, 4))
+    result = result + state
+
+    return result
+
+
+def backward_pass3(state):
+    result = M.dot(state)
+    result = permute(result.ravel(), P_INVERSE).reshape((4, 4))
+    result = result + state
+
+    return result
+
 
 def main():
-    print('Run tests to make sure everything works!')
-    debug = cipher.MantisDebug(4, 'matrix', True, 4)
-    mantis = cipher.Mantis(4, 4, 4, debug)
-    key, tweak, plaintext = '10010010111100001001100101010010110001100010010111100011111010011101011110100000011000001111011100010100110000000010100100101011',\
-            '1011101010010001001011100110111100010000010101011111111011010010',\
-            '0011000010001110100010100000011111110001011010001111010100010111',
+    states = (int2matrix(i, 1, 16, 4) for i in range(1, 2 ** 16))
+    good_states = []
+    results = []
+    zeros_amount = np.zeros(2 ** 16)
 
+    print('--- forward pass:')
+    for i, state in enumerate(states):
+        if np.sum(state.ravel()) < 5:
+            continue
 
-    plaintexts = FixedBitsIterator(64, [i for i in range(4)], 0)
-    for plaintext in plaintexts:
-        mantis.debug.reset()
-        mantis.encrypt(f'{plaintext:064b}', key, tweak)
-        print(mantis.debug.get_state(-1, 'sbox'))
-        
+        result = forward_pass(state)
+        zeros_amount[i] = np.sum(result == 0)
 
+        if zeros_amount[i] > 0:
+            good_states.append(state)
+            results.append(result)
 
+            # print(f'state:\n{state}')
+            # print(f'result:\n{result}\n')
+
+    print('--- backward pass:')
+    for result_, state_ in zip(results, good_states):
+        result = backward_pass3(state_)
+
+        if np.min(result) == 0:
+            if np.min(result + result_) == 0:
+                print(f'state:\n{state_}')
+                print(f'forward-pass result:\n{result_}')
+                print(f'backward-pass result:\n{result}\n')
+
+    print(np.max(zeros_amount))
 
 
 if __name__ == '__main__':
