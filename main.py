@@ -1,3 +1,4 @@
+import typing
 import numpy as np
 
 from mantis.constants import P, M, P_INVERSE
@@ -34,6 +35,16 @@ def backward_pass3(state):
     return result
 
 
+def find_zero_intersect(state: np.ndarray[int], states: list[np.ndarray[int]]) -> dict[int, int]:
+    results = {}
+    for i, s in enumerate(states):
+        nz_amount = state.size - np.count_nonzero(s + state)
+        if nz_amount > 0:
+            results[i] = nz_amount
+
+    return results
+
+
 def main():
     states = (int2matrix(i, 1, 16, 4) for i in range(1, 2 ** 16))
     good_states = []
@@ -42,7 +53,7 @@ def main():
 
     print('--- forward pass:')
     for i, state in enumerate(states):
-        if np.sum(state.ravel()) < 5:
+        if np.sum(state.ravel()) != 4:
             continue
 
         result = forward_pass(state)
@@ -55,18 +66,31 @@ def main():
             # print(f'state:\n{state}')
             # print(f'result:\n{result}\n')
 
-    print('--- backward pass:')
-    for result_, state_ in zip(results, good_states):
-        result = backward_pass3(state_)
+    states = (int2matrix(i, 1, 16, 4) for i in range(1, 2 ** 16))
 
-        if np.min(result) == 0:
-            if np.min(result + result_) == 0:
-                print(f'state:\n{state_}')
-                print(f'forward-pass result:\n{result_}')
-                print(f'backward-pass result:\n{result}\n')
+    print('--- backward pass:')
+    for i, state in enumerate(states):
+        if np.sum(state.ravel()) != 5:
+            continue
+
+        result = backward_pass(state)
+        if np.sum(result == 0) > 0:
+            indices = find_zero_intersect(result, results)
+            if len(indices) > 0:
+                for k, v in indices.items():
+                    indices2 = find_zero_intersect(state, [good_states[k]])
+                    if len(indices2) > 0:
+                        if indices2[0] >= 8:
+                            print(indices2[0])
+                            print(f'state_forward:')
+                            print(good_states[k])
+                            print(f'state_backward:')
+                            print(state)
+                            print(v)
 
     print(np.max(zeros_amount))
 
 
 if __name__ == '__main__':
     main()
+
