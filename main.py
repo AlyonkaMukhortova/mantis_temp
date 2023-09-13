@@ -1,3 +1,4 @@
+import dataclasses
 import typing
 import numpy as np
 
@@ -45,50 +46,66 @@ def find_zero_intersect(state: np.ndarray[int], states: list[np.ndarray[int]]) -
     return results
 
 
+def get_all_states_iterator(ncells: int):
+    return (int2matrix(i, 1, ncells, 4) for i in range(1, 2 ** ncells))
+
+
+def number_of_ones(state: np.ndarray[int]) -> int:
+    return np.sum(state.ravel())
+
+
+@dataclasses.dataclass
+class State:
+    zeros_amount: int
+    initial_state: np.ndarray[int]
+    final_state: np.ndarray[int]
+
+
 def main():
-    states = (int2matrix(i, 1, 16, 4) for i in range(1, 2 ** 16))
-    good_states = []
-    results = []
-    zeros_amount = np.zeros(2 ** 16)
+    states = get_all_states_iterator(16)
+    states_forward = []
 
     print('--- forward pass:')
-    for i, state in enumerate(states):
-        if np.sum(state.ravel()) != 4:
+    for state in states:
+        if number_of_ones(state) < 1:
             continue
 
         result = forward_pass(state)
-        zeros_amount[i] = np.sum(result == 0)
+        zeros_amount = np.sum(result == 0)
 
-        if zeros_amount[i] > 0:
-            good_states.append(state)
-            results.append(result)
-
+        if zeros_amount > 0:
+            states_forward.append(State(zeros_amount, state, result))
             # print(f'state:\n{state}')
             # print(f'result:\n{result}\n')
 
-    states = (int2matrix(i, 1, 16, 4) for i in range(1, 2 ** 16))
+    states = get_all_states_iterator(16)
+    states_backward = []
 
     print('--- backward pass:')
     for i, state in enumerate(states):
-        if np.sum(state.ravel()) != 5:
+        if number_of_ones(state) < 1:
             continue
 
         result = backward_pass(state)
-        if np.sum(result == 0) > 0:
-            indices = find_zero_intersect(result, results)
+        zeros_amount = np.sum(result == 0)
+
+        if zeros_amount > 0:
+            indices = find_zero_intersect(result, [s.final_state for s in states_forward])
             if len(indices) > 0:
                 for k, v in indices.items():
-                    indices2 = find_zero_intersect(state, [good_states[k]])
-                    if len(indices2) > 0:
-                        if indices2[0] >= 8:
-                            print(indices2[0])
-                            print(f'state_forward:')
-                            print(good_states[k])
-                            print(f'state_backward:')
-                            print(state)
-                            print(v)
+                    if v > 3:
+                        print(v)
+                        indices2 = find_zero_intersect(state, [states_forward[k].initial_state])
+                        if len(indices2) > 0:
+                            if indices2[0] >= 8:
+                                print(indices2[0])
+                                print(f'state_forward:')
+                                print(states_forward[k].initial_state)
+                                print(f'state_backward:')
+                                print(state)
+                                print(v)
 
-    print(np.max(zeros_amount))
+    # print(np.max(zeros_amount))
 
 
 if __name__ == '__main__':
